@@ -32,6 +32,21 @@ app.get('/api/todos', async(req, res) => {
     })
     res.json(todos);     // 回傳一筆json資料到前端，前端發現變數有變之後會重新渲染
 })
+// GET /api/todos - list a single todo
+app.get('/api/todos/:id', async(req, res) => {
+    const id = Number(req.params.id);
+    if(Number.isNaN(id)){
+        return res.status(400).json({error: 'invalid id.'});
+    }
+    const todo = await prisma.todo.findUnique({
+        where: {id: id},
+    });
+    if(!todo){
+        return res.status(404).json({error: 'todo not found.'});
+    }
+    res.json(todo);
+})
+
 
 // POST /api/todos - create
 app.post('/api/todos', async (req, res) => {
@@ -48,7 +63,7 @@ app.post('/api/todos', async (req, res) => {
 app.put('/api/todos/:id', async (req, res) => {
     const id = Number(req.params.id); // 前端會打/api/todos/:id到後端，在後端可以用req.params.id來拿到目標的id
     if(Number.isNaN(id)){
-        return res.status(400).json({error: 'invalid number'});
+        return res.status(400).json({error: 'invalid id number'});
     }
     const {title, done} = req.body;
     const todos = await prisma.todo.update({
@@ -65,9 +80,9 @@ app.put('/api/todos/:id', async (req, res) => {
 app.delete('/api/todos/:id', async (req, res) => {
     const id = Number(req.params.id);
     if(Number.isNaN(id)){
-        return res.status(202).json({error: 'invalid id'});
+        return res.status(400).json({error: 'invalid id'});
     }
-    const todos = await prisma.todo.delete({where: {id}});
+    const todos = await prisma.todo.delete({where: {id}}); // prisma.todo.delete(...) 會回傳被刪掉的那筆物件
 
     // send()跟json()都是送response、結束連線。只是json一定只能送json物件，send則不限。
     res.status(204).send(); // 204 的意思：「操作成功，但沒東西給你看」。用 send() 送空 body 最貼切。

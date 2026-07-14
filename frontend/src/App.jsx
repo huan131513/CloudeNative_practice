@@ -9,7 +9,7 @@ function App() { // 要跟檔案名稱一致
   const [todos, setTodos] = useState([]); // todos是陣列，所以傳入空陣列當作初始化
   const [newTitle, setNewTitle] = useState(''); // user在前端輸入匡輸入文字後，就會觸發setNewTitle
 
-  // 頁面載入時撈清單
+  // GET: 頁面載入時撈清單
   useEffect(() => {
     fetch(`${API_URL}/api/todos`)     // fetch裡面不用寫method='GET'是因為系統已經預設了。
     .then((res) => {
@@ -19,7 +19,7 @@ function App() { // 要跟檔案名稱一致
     .then(setTodos)
   }, []); // 第二個參數[]代表這個function只做一次，不用監看哪個變數使否變動。
 
-  // 新增 todo
+  // POST: 新增 todo
   async function handleAdd(e){ // e是DOM事件塞過來的event事件（例如按下按鈕後觸發）
     e.preventDefault();
     const res = await fetch(`${API_URL}/api/todos`, { // 加上await是確保變數有順利被fetch完才進下一行
@@ -31,7 +31,7 @@ function App() { // 要跟檔案名稱一致
     setTodos([created, ...todos]);
     setNewTitle(''); // 把newTitle變數清空
   } 
-  // 更改狀態（是否完成）
+  // PUT: 更改狀態（是否完成）
   async function handleToggle(todo){  // id是<input>標籤中onChange呼叫實會傳入的
     const res = await fetch(`${API_URL}/api/todos/${todo.id}`,{ // res是更新後的整個todos
       method:'PUT',
@@ -42,7 +42,7 @@ function App() { // 要跟檔案名稱一致
     setTodos(todos.map((t) => (t.id === updated.id ? updated : t))); // iter整個todos，找到有修改的那一筆
   }
 
-  // 刪除 todo
+  // DELETE: 刪除 todo
   async function handleDelete(id){
     await fetch(`${API_URL}/api/todos/${id}`,{
       method: 'DELETE',
