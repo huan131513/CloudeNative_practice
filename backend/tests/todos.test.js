@@ -37,6 +37,47 @@ describe('Todo API', () => {
             // Assert
             expect(res.status).toBe(200);
             expect(res.body).toEqual(fakeTodos);
+        });
+        it('正常取得單一個todo，回傳200', async () => {
+            // Assert
+            const fakeTodo = {
+                id: 3,
+                title: '洗澡',
+                done: true,
+                createdAt: new Date().toISOString(),
+            }
+            const spy = vi.spyOn(prisma.todo, 'findUnique').mockResolvedValue(fakeTodo);
+
+            // Act
+            const res = await request(app).get('/api/todos/3');
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual(fakeTodo);
+        })
+        it('取得單一todo，但是查無id，回傳404', async () => {
+            // Assert
+            const spy = vi.spyOn(prisma.todo, 'findUnique').mockResolvedValue(null);
+
+            // Act
+            const res = await request(app).get('/api/todos/999');
+
+            // Assert
+            expect(res.status).toBe(404);
+            expect(res.body.error).toEqual('todo not found');
+            expect(spy).toHaveBeenCalledWith({where:{id:999}});// 確實有呼叫findUnique()參數帶入id:999，只是因為沒找到才回傳error
+        });
+        it('取得單一todo，但是id無效，回傳400', async () => {
+            // Assert
+            const spy = vi.spyOn(prisma.todo, 'findUnique');
+
+            // Act
+            const res = await request(app).get('/api/todos/wrongTitle');
+
+            // Assert
+            expect(res.status).toBe(400);
+            expect(res.body.error).toEqual('invalid id');
+            expect(spy).not.toHaveBeenCalledWith();
         })
     })
     // 測post

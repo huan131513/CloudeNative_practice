@@ -36,13 +36,13 @@ app.get('/api/todos', async(req, res) => {
 app.get('/api/todos/:id', async(req, res) => {
     const id = Number(req.params.id);
     if(Number.isNaN(id)){
-        return res.status(400).json({error: 'invalid id.'});
+        return res.status(400).json({error: 'invalid id'});
     }
     const todo = await prisma.todo.findUnique({
         where: {id: id},
     });
     if(!todo){
-        return res.status(404).json({error: 'todo not found.'});
+        return res.status(404).json({error: 'todo not found'});
     }
     res.json(todo);
 })
