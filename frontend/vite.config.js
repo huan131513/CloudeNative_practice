@@ -8,8 +8,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   test: {
-    enviroment: 'jsdom', // 用 jsdom 模擬瀏覽器 DOM
+    environment: 'jsdom', // 用 jsdom 模擬瀏覽器 DOM
     globals: true, // 讓 describe/it/expect 全域可用（不用每個檔案都import）
-    setupFiles: '.src/test-setup.js', //這個檔案是每個test檔跑前的統一前置
+    setupFiles: 'src/test-setup.js', //這個檔案是每個test檔跑前的統一前置
   },
 })

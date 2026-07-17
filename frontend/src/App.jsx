@@ -55,7 +55,10 @@ function App() { // 要跟檔案名稱一致
     <div>
       <h1>Todo List</h1>
       <form onSubmit={handleAdd}>
-        <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)}></input>
+        <input 
+          type="text"
+          value={newTitle} 
+          onChange={(e) => setNewTitle(e.target.value)}></input>
         <button type="submit">新增</button>
       </form>
       {/* 顯示todos列表 */}
