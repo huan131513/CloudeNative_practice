@@ -1,0 +1,50 @@
+services: 
+  postgres:
+    image: postgres:16
+    container_name: cn_practice_postgres
+
+    # 這三個值Postgres官方image自動建立，必須跟backend連線字串裡的user/password/dbname對上。
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: todoapp
+    ports:
+      - "5432:5432"
+    # 把名為todo-pgdata的volume，掛到container內的/var/lib/postgresql/data 路徑
+    volumes:
+      - todo-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready — Postgres 內建健康探針工具
+      # -U postgres：用postgres user
+      # -d todoapp：檢查 todoapp DB
+      test: ["CMD-SHELL", "pg_isready -U postgres -d todoapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  backend: 
+    image: cn_practice_todo_backend:local
+    container_name: cn_practice_backend
+    environment:
+      # 這三個資料在local端執行也又設定，db url在.env、frontend origin跟port在index.js
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/todoapp?schema=public
+      FRONTEND_ORIGIN: http://localhost:5173
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      # 要等postgres container開啟後才開啟後端container
+      postgres:
+        # 不只要讓postgres先開，還要確認health狀態
+        condition: service_healthy
+    # container 啟動時，用 shell 依序做兩件事：先跑 Prisma migration 更新 DB schema、成功後才啟動 Express server
+    command: sh -c "npx prisma migrate deploy && node src/server.js"
+  frontend:
+    image: cn_practice_todo_frontend:local
+    container_name: cn_practice_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  todo-pgdata:

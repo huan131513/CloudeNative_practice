@@ -32,7 +32,7 @@ describe('Todo API', () => {
             vi.spyOn(prisma.todo, 'findMany').mockResolvedValue(fakeTodos);
 
             // Act (模擬client打api到後端)
-            const res = await request(app).get('/api/todos');
+            const res = await request(app).get('/api/todos'); // res是後端處理完之後傳回前端的json物件
             
             // Assert
             expect(res.status).toBe(200);
