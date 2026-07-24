@@ -1,0 +1,74 @@
+# 這份檔案撰寫Postgres（StatefulSet + PVC + headless Service）的設定
+apiVersion: v1
+# service: 原本是當作「內部固定入口 + 負載平衡」，但postgres只有一個container不需要負載平衡
+# 所以這裡會用service只是因為要給postgres一個固定DNS名字（只有service是固定的，pod重生時會換ip）
+kind: Service
+
+# 這個service叫做postgres
+metadata: 
+  name: postgres
+spec: 
+  # 這裡設定headless：不給這個 Service 自己的 IP：
+  # 一般 Service 有自己的固定 IP（當總機、負載平衡）。headless（clusterIP: None）則不給自己 IP，DNS 直接指向 Pod 本身。
+  # DB 為什麼要這樣：DB 通常只有一個實例、要精準連到「那一個 Pod」，不需要負載平衡。headless 讓 postgres 這個 DNS 名直接對應 postgres-0 Pod。
+  clusterIP: None
+  # 我要罩住貼了 app: postgres 標籤的 Pod(在下面spec->template->metadata->labels)
+  # 找到後service可以把流量轉給這些pod
+  selector:
+    app: postgers
+  ports:
+    - port: 5432 # service對外開的port
+      targetPort: 5432 # 轉發到pod的哪個port，要跟下面的containerPort一樣
+---
+apiVersion: apps/v1
+kind: StatefulSet
+
+# Service中也把name叫做postgres。同一個kind+同一個namespace裡不重複就好。
+# 相同的命名可以快速看出上面的service就是來服務這裡的postgres pod
+metadata: 
+  name: postgres # ← 【A】我是誰
+spec:
+  # 【B】怎麼管理我的 Pod
+  serviceName: postgres # 綁定上面寫過的service
+  replicas: 1 # 在這裡宣告只需要一個pod run DB
+  selector: 
+    # matchLabels：StatefulSet 靠標籤認領哪些 Pod 是它的副本，你掛了我補。
+    matchLabels:
+      # 下面的格式是 (key: value)
+      app: postgres
+  
+  # StatefulSet / Deployment 這種控制器自己不跑程式，它們的工作是「照著一個模板，生出一個個 Pod」。這個模板就是 template
+  template: #【C】要生的 Pod 長怎樣（Pod 本體），開始寫pod規格
+    metadata:
+      # 這個statefulSet的labels叫做postgres，讓
+      labels: 
+        app: postgres
+    spec: 
+      containers: 
+        - name: postgres
+          image: postgres:16
+          ports: 
+            -containerPort: 5432
+          env: 
+            #取得postgres的資料
+            - name: POSTGRES_USER
+              valueFrom: 
+                secretKeyRef:
+                  # 從名叫todo-secret的檔案抓資料（secret.yaml中有設定name: todo-secret）
+                  name: todo-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: todo-config
+                  key: POSTGRES_DB
+          # 設定volume要存在哪個實際硬碟位置
+          volumeMountas: 
+            - name: pgdata
+              # postgres 寫資料到 /var/lib/postgresql/data → 資料其實寫進了外部硬碟，不是寫進容器。所以容器死掉重生，資料還在外部硬碟裡。
+              mountPath: /var/lib/postgresql/data 
