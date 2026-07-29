@@ -27,7 +27,7 @@ function App() { // 要跟檔案名稱一致
       headers: {'Content-Type':'application/json'}, 
       body: JSON.stringify({title: newTitle}), // 會傳遞{ title: '喝水' } (JS 物件)到後端
     })
-    const created = await res.json(); // POS完之後會回傳新增的這筆todo給res變數
+    const created = await res.json(); // POST完之後會回傳新增的這筆todo給res變數
     setTodos([created, ...todos]);
     setNewTitle(''); // 把newTitle變數清空
   } 
