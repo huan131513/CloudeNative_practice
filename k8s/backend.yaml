@@ -1,0 +1,95 @@
+# 這份檔案撰寫backend(service + worker pod)的設定
+apiVersion: v1
+# service: 原本是當作「內部固定入口 + 負載平衡」，backend有多個container需要負載平衡
+kind: Service
+metadata: 
+  name: backend # 宣告這個service叫做backend
+spec: 
+  # 我要罩住貼了 app: backend 標籤的 Pod(在下面spec->template->metadata->labels)
+  # 找到後service可以把流量轉給這些pod
+  selector:
+    app: backend
+  ports:
+    - port: 3000 # service對外開的port
+      targetPort: 3000 # 轉發到pod的哪個port，要跟下面的containerPort一樣
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: backend
+spec:  
+  replicas: 2 # backend worker pods的數量
+              # 這裡要注意，「計算Pod 夠不夠、不夠就補」的實際執行者是 ReplicaSet Controller。
+              # Deployment Controller：把 replicas:1 交給 ReplicaSet Controller
+  selector: # Deployment會抓到Label叫做"backend"的pod，用以掃描當前數量是否正確
+    matchLabels: 
+      app: backend
+  template: # -----從這裡開始就是在寫pod的規格（Deployment會生出pod）
+    metadata: 
+      labels: 
+        app: backend
+    spec: 
+      # initContainers 是「主容器啟動前先跑完的一次性容器」。
+      # 這裡用跟 backend 同一個 image，但 command 覆蓋成只跑 prisma migrate deploy（建表）只給它 DATABASE_URL（連 DB 用）。
+      # migration 成功退出後，主 backend 容器才啟動 node server——職責分離、失敗好 debug。
+      initContainers: 
+        - name: migrate
+          image: cn_practice_todo_backend:local
+
+          # Pod 啟動時，K8s 要決定「image 從哪來」——用 node 上已有的，還是去遠端 registry（Docker Hub）拉新的。
+          # IfNotPresent -> 先去本地找
+          # 我的 image cn_practice_todo_backend:local是手動load進node的，它只存在你的 node 裡，Docker Hub 上沒有。
+          imagePullPolicy: IfNotPresent
+          command: ["npx", "prisma", "migrate", "deploy"]
+          env: # runtime要讀的資訊
+            # 取得DB的地址
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secret
+                  key: DATABASE_URL
+      containers:
+      - name: backend
+        image: cn_practice_todo_backend:local
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 3000 # containerPort: 3000 只是在 YAML 上告訴讀的人「這容器會用 3000」，它本身不打開任何東西。
+        env: 
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: todo-secret
+                key: DATABASE_URL
+          - name: FRONTEND_ORIGIN
+            valueFrom:
+              configMapKeyRef:
+                name: todo-config
+                key: FRONTEND_ORIGIN
+          - name: PORT
+            valueFrom:
+              configMapKeyRef:
+                name: todo-config
+                key: PORT
+        readinessProbe: # readinessProbe 管「pod準備好了沒→要不要給流量」（失敗只移出、不重啟）；
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe: # livenessProbe 管「pod還活著嗎→要不要重啟」（失敗重啟）
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources: # 該pod需要的資源量
+          requests: # 最少
+            cpu: 50m
+            memory: 64Mi
+          limits: # 最多
+            cpu: 250m
+            memory: 256Mi
+
+
+

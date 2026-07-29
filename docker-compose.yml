@@ -1,5 +1,7 @@
 services: 
   postgres:
+    # Q: 為什麼postgres不用寫dockerfile? 
+    # A: postgres是一套成熟的資料庫軟體，官方（PostgreSQL 團隊 + Docker）早就幫全世界打包好 image 放在 Docker Hub 了。
     image: postgres:16
     container_name: cn_practice_postgres
 
@@ -25,7 +27,7 @@ services:
     image: cn_practice_todo_backend:local
     container_name: cn_practice_backend
     environment:
-      # 這三個資料在local端執行也又設定，db url在.env、frontend origin跟port在index.js
+      # 這三個資料在local端執行也有設定，db url在.env、frontend origin跟port在index.js
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/todoapp?schema=public
       FRONTEND_ORIGIN: http://localhost:5173
       PORT: 3000
@@ -41,6 +43,8 @@ services:
   frontend:
     image: cn_practice_todo_frontend:local
     container_name: cn_practice_frontend
+    # 左邊 host:5173 → 右邊 container:80
+    # 我打 host 的 5173，Docker 幫我轉進 container 的 80（nginx 在裡面 listen 80）
     ports:
       - "5173:80"
     depends_on:

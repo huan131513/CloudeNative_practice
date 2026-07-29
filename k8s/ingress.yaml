@@ -1,0 +1,30 @@
+# 5-2 裝的是 Ingress Controller（執行路由的引擎，官方現成、裝一次、通用）；
+# 現在寫的 ingress.yaml 是 Ingress 資源（你 app 專屬的路由規則，自己寫）。
+# 引擎待命、規則客製，靠 ingressClassName 接起來——引擎讀到你的規則後才真正開始轉發。
+# 就像印表機（引擎）+ 文件（規則）。
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: 
+  name: todo-ingress
+spec:
+  # ingressClassName: nginx 指定「這份路由規則交給哪個 Ingress Controller 執行」。
+  # 這個 nginx 是你 5-2 安裝時註冊的 IngressClass 名稱（剛好叫 nginx），不是泛指 nginx 軟體。
+  # 用 kubectl get ingressclass 可查到該填什麼——照它列的名字寫。
+  ingressClassName: nginx
+  rules: # 路由分派規則
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix # 定義：Ingress 看到 /api 開頭 → 原樣轉給 backend Service:3000
+            backend: # 這條規則要轉發到哪個 Service，不是在指「後端」
+              service:
+                name: backend
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend: 
+              service:
+                name: frontend
+                port:
+                  number: 80

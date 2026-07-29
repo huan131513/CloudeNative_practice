@@ -3,10 +3,8 @@ apiVersion: v1
 # service: 原本是當作「內部固定入口 + 負載平衡」，但postgres只有一個container不需要負載平衡
 # 所以這裡會用service只是因為要給postgres一個固定DNS名字（只有service是固定的，pod重生時會換ip）
 kind: Service
-
-# 這個service叫做postgres
 metadata: 
-  name: postgres
+  name: postgres # 宣告這個service叫做postgres
 spec: 
   # 這裡設定headless：不給這個 Service 自己的 IP：
   # 一般 Service 有自己的固定 IP（當總機、負載平衡）。headless（clusterIP: None）則不給自己 IP，DNS 直接指向 Pod 本身。
@@ -15,7 +13,7 @@ spec:
   # 我要罩住貼了 app: postgres 標籤的 Pod(在下面spec->template->metadata->labels)
   # 找到後service可以把流量轉給這些pod
   selector:
-    app: postgers
+    app: postgres
   ports:
     - port: 5432 # service對外開的port
       targetPort: 5432 # 轉發到pod的哪個port，要跟下面的containerPort一樣
@@ -48,7 +46,7 @@ spec:
         - name: postgres
           image: postgres:16
           ports: 
-            -containerPort: 5432
+            - containerPort: 5432
           env: 
             #取得postgres的資料
             - name: POSTGRES_USER
@@ -68,7 +66,22 @@ spec:
                   name: todo-config
                   key: POSTGRES_DB
           # 設定volume要存在哪個實際硬碟位置
-          volumeMountas: 
+          
+          volumeMounts: 
             - name: pgdata
               # postgres 寫資料到 /var/lib/postgresql/data → 資料其實寫進了外部硬碟，不是寫進容器。所以容器死掉重生，資料還在外部硬碟裡。
               mountPath: /var/lib/postgresql/data 
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "todoapp"]
+            initialDelaySeconds:  5
+            periodSeconds: 5
+  # 資料到實際硬碟，靠的是一層層的檔案系統掛載：postgres 寫容器內路徑 → Linux 核心透明重導向到 PV（kind 裡是 node 內一個資料夾）→ node 的檔案系統存在 Docker 的 Linux VM 虛擬磁碟 → 最終落在 Mac 的 SSD。每層抽象掉下一層，所以你只管最上層。
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

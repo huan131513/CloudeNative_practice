@@ -1,0 +1,15 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+    # hostPort 是我的 Mac host 的 port，containerPort 是 kind node（todo-control-plane）的 port，用這個設定把兩個 port 綁定，所以我打 Mac 的 80 會自動轉到 node 的 80。
+    # 把 host 的 80/443 forward 進 node: 在 Docker 層打一條「Mac 的 80 → node container 的 80」的專線，讓外面的封包進得去 kind 這個「盒子裡的盒子」
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+    # 因為瀏覽器預設打的就是 80（HTTP）跟 443（HTTPS）。你打 http://localhost/ 瀏覽器實際上是打 http://localhost:80/。
+    # 如果設 hostPort: 8080，那就要打 http://localhost:8080/——也可以，只是不習慣。

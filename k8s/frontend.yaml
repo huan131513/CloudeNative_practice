@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: cn_practice_todo_frontend:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe: # readinessProbe 管「pod準備好了沒→要不要給流量」（失敗只移出、不重啟）；
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          # 不需要livenessProbe: 因為靜態檔伺服器幾乎不會「卡死但還活著」nginx 出事多半是 process 直接死 → 這種 K8s 本來就會重啟
+          resources: # 該pod需要的資源量
+            requests: # 最少
+              cpu: 20m
+              memory: 32Mi
+            limits: # 最多
+              cpu: 100m
+              memory: 128Mi
