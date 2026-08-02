@@ -35,12 +35,19 @@ spec:
       # migration 成功退出後，主 backend 容器才啟動 node server——職責分離、失敗好 debug。
       initContainers: 
         - name: migrate
-          image: cn_practice_todo_backend:local
+          ## 〖這是local kind叢集的設定〗
+          # image: cn_practice_todo_backend:local
+          ## 這是GKE的設定，把image推到GKE AR上
+          image: asia-east1-docker.pkg.dev/todo-cloudnative-huan/todo-repo/backend:latest
 
-          # Pod 啟動時，K8s 要決定「image 從哪來」——用 node 上已有的，還是去遠端 registry（Docker Hub）拉新的。
-          # IfNotPresent -> 先去本地找
-          # 我的 image cn_practice_todo_backend:local是手動load進node的，它只存在你的 node 裡，Docker Hub 上沒有。
-          imagePullPolicy: IfNotPresent
+          ## 〖這是local kind叢集的設定〗
+          ## Pod 啟動時，K8s 要決定「image 從哪來」——用 node 上已有的，還是去遠端 registry（Docker Hub）拉新的。
+          ## IfNotPresent -> 先去本地找
+          ## 我的 image cn_practice_todo_backend:local是手動load進node的，它只存在你的 node 裡，Docker Hub 上沒有。
+          # imagePullPolicy: IfNotPresent
+          ## 這是GKE的設定，image Always從雲端抓取
+          imagePullPolicy: Always
+
           command: ["npx", "prisma", "migrate", "deploy"]
           env: # runtime要讀的資訊
             # 取得DB的地址
@@ -51,8 +58,10 @@ spec:
                   key: DATABASE_URL
       containers:
       - name: backend
-        image: cn_practice_todo_backend:local
-        imagePullPolicy: IfNotPresent
+        # image: cn_practice_todo_backend:local
+        image: asia-east1-docker.pkg.dev/todo-cloudnative-huan/todo-repo/backend:latest
+        # imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
           - containerPort: 3000 # containerPort: 3000 只是在 YAML 上告訴讀的人「這容器會用 3000」，它本身不打開任何東西。
         env: 

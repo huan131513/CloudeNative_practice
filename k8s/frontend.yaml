@@ -25,8 +25,16 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: cn_practice_todo_frontend:local
-          imagePullPolicy: IfNotPresent
+          ## 〖這是local kind叢集的設定〗
+          # image: cn_practice_todo_frontend:local
+          ## 這是GKE的設定，把image推到GKE AR上
+          image: asia-east1-docker.pkg.dev/todo-cloudnative-huan/todo-repo/frontend:latest
+          
+          ## 〖這是local kind叢集的設定〗
+          # imagePullPolicy: IfNotPresent
+          ## 這是GKE的設定，image Always從雲端抓取
+          imagePullPolicy: Always
+
           ports:
             - containerPort: 80
           readinessProbe: # readinessProbe 管「pod準備好了沒→要不要給流量」（失敗只移出、不重啟）；

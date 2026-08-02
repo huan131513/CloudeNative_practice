@@ -88,7 +88,7 @@ jobs:
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
-        with:
+        with: # ← 告訴 GitHub 要認證去哪
           workload_identity_provider: projects/749120191951/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: github-actions-sa@todo-cloudnative-huan.iam.gserviceaccount.com
 
