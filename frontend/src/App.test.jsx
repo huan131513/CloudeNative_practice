@@ -13,7 +13,7 @@ import userEvent from '@testing-library/user-event';
 // 先把後端的回傳值Mock，避免真的打到後端
 beforeEach(() => {
     // 這裡都是在寫「模擬的」後端行為
-    // 如果不 mock，fetch 真的去打 http://localhost:3000 → 後端沒開 → 失敗
+    // 如果不mock，fetch真的去打http://localhost:3000→ 後端沒開 → 失敗
     global.fetch = vi.fn((url, options) => { // global.fetch = ... : 覆蓋全域 fetch 函式
         // GET /api/todos ：回傳空陣列
         if(!options || options === 'GET' || !options.method ){ // 都視為GET。!option代表沒有寫method，則系統預設為GET
