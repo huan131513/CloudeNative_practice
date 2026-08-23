@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "type": "module", 
+  "type": "module",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -18,6 +18,7 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.10",
     "prisma": "^6.19.3",
     "supertest": "^7.2.2",
     "vitest": "^4.1.10"

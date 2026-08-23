@@ -22,9 +22,19 @@ app.use(express.json()); // 先解析body。所有請求進來時，如果 body 
 
 // health檢查
 app.get('/health', (req, res)=>{
-    res.status(200).json({status:'ok這個狀態極佳'});
+    res.status(200).json({status:'ok讚讚'});
+})
+// readiness 檢查（含 DB 連線）— 給 readinessProbe 用
+app.get('/ready', async (req, res) => {
+    try {
+        await prisma.$queryRaw`SELECT 1`;   // 探 DB 連得上嗎
+        res.status(200).json({ status: 'ready', db: 'up' });
+    } catch (err) {
+        res.status(503).json({ status: 'not-ready', db: 'down' }); // DB 掛 → 503 → readiness 失敗 → 被踢出 LB
+    }
 })
 
+// 開始監聽user操作的請求
 // GET /api/todos - list all
 app.get('/api/todos', async(req, res) => {
     const todos = await prisma.todo.findMany({

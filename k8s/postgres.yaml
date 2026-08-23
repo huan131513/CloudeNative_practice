@@ -49,6 +49,8 @@ spec:
             - containerPort: 5432
           env: 
             #取得postgres的資料
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_USER
               valueFrom: 
                 secretKeyRef:

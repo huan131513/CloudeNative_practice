@@ -82,7 +82,7 @@ spec:
                 key: PORT
         readinessProbe: # readinessProbe 管「pod準備好了沒→要不要給流量」（失敗只移出、不重啟）；
           httpGet:
-            path: /health
+            path: /ready
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 10
