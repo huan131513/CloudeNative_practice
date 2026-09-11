@@ -6,8 +6,8 @@ COPY package*.json ./
 
 RUN npm ci
 
-# ARG = Dockerfile 內部變數，shell 讀不到、build 完消失
-# ENV = 環境變數，shell 讀得到、保留在 image 內
+# ARG : 宣告一個 build 變數
+# ENV : 傳給 Vite
 
 # 這個 build 有個叫 VITE_API_URL 的參數，預設 /api，可以從 docker build --build-arg 覆蓋
 # 因為同一份 Dockerfile 要能被多種環境重複用，所以在docker build時手動寫入當前環境的URL

@@ -8,10 +8,11 @@ WORKDIR /app
 
 # 先只 copy package files，讓 Docker cache npm install
 # 複製當前路徑(/backend)中，開頭是package的所有json檔案到docker中的root(/app)
+# 完整安裝所有依賴（含 devDependencies，因為要跑 prisma generate）
 COPY package*.json ./ 
 COPY prisma ./prisma
 
-# 完整安裝所有依賴（含 devDependencies，因為要跑 prisma generate）
+# clean install（乾淨安裝）
 RUN npm ci
 
 # npm = 套件管理器（install、run scripts、publish）

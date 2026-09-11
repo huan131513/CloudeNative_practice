@@ -1,0 +1,18 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend
+spec:
+  scaleTargetRef:          # 要擴縮哪個 Deployment
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend  # 對應backend.yaml中的metadata/name:
+  minReplicas: 2           # ← 最少
+  maxReplicas: 10          # ← 最多
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50   # ← 門檻 50%
